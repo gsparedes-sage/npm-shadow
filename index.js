@@ -84,8 +84,8 @@ module.exports = function(options) {
 					ensureDir(fsp.dirname(redir));
 					fs.writeFileSync(redir, JSON.stringify({
 						version: pkg && pkg.version,
-						path: cachePath
-					}), "utf8");
+						path: cachePath.substring(root.length),
+					}, null, '\t'), "utf8");
 				}
 				if (binary) cachePath = cachePath.replace('$$BIN$$', arch + '-' + v8);
 				if (!cached || !fs.existsSync(cachePath)) {
@@ -99,7 +99,7 @@ module.exports = function(options) {
 			//console.error("ERROR! ", err.stack);
 			if (err.code === 'MODULE_NOT_FOUND' && redir && fs.existsSync(redir)) {
 				var cached = JSON.parse(fs.readFileSync(redir, "utf8"));
-				cachePath = cached.path.replace('$$BIN$$', arch + '-' + v8);
+				cachePath = root + cached.path.replace('$$BIN$$', arch + '-' + v8);
 				return cachePath;
 			} else throw err;
 		}
