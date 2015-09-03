@@ -85,7 +85,6 @@ module.exports = function(options) {
 			paths.push(parent);
 			parent = fsp.join(parent, '../../node_modules');
 		}
-		console.error(paths);
 		return paths;
 	}
 
@@ -94,14 +93,14 @@ module.exports = function(options) {
 			return original._resolveFilename(request, parent);
 		} catch (err) {
 			if (err.code !== 'MODULE_NOT_FOUND') throw err;
-			console.error("RESOLVE " + request);
+			//console.error("RESOLVE " + request);
 			var from = parent.filename == null ? parent.paths[0] : parent.filename;
 			if (!under(from, root)) throw err;
 			var mod = new Module(parent.id);
 			if (under(from, shadowRoot)) mod.filename = from;
 			else mod.filename = fsp.join(shadowRoot, from.substring(root.length));
 			mod.paths = shadowPaths(mod.filename, shadowRoot, request[0] === '.');
-			console.error("trying from ", mod.filename);
+			//console.error("trying from ", mod.filename);
 			try {
 				return original._resolveFilename(request, mod);
 			} catch (err) {
@@ -110,7 +109,7 @@ module.exports = function(options) {
 				else if (under(from, shadowRoot)) mod.filename = fsp.join(binRoot, from.substring(shadowRoot.length));
 				else mod.filename = fsp.join(binRoot, from.substring(root.length));
 				mod.paths = shadowPaths(mod.filename, binRoot, request[0] === '.');
-				console.error("trying binary from ", mod.filename, mod.paths);
+				//console.error("trying binary from ", mod.filename, mod.paths);
 				if (!/\.node$/.test(request)) request += '.node';
 				return original._resolveFilename(request, mod);
 			}
