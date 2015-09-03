@@ -21,7 +21,7 @@ function ensureDir(path) {
 module.exports = function(options) {
 	options = options || {};
 	var root = options.sourceRoot || fsp.join(__dirname, '../..');
-	var cacheRoot = options.cacheRoot || fsp.join(__dirname, '../cached-modules');
+	var cacheRoot = options.cacheRoot || fsp.join(__dirname, '../shadow-modules');
 	var verbose = !!options.verbose;
 
 
