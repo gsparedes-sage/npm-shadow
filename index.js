@@ -46,6 +46,10 @@ module.exports = function(options) {
 			var sub = fsp.join(path, name)
 			var stat = fs.lstatSync(sub);
 			if (stat.isDirectory()) {
+				if (/^grunt-/.test(name)) {
+					log("skipping " + sub);
+					return;
+				}
 				log("processing " + sub);
 				var npkgPath = fsp.join(sub, 'package.json');
 				var npkg = pkg;
