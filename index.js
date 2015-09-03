@@ -76,29 +76,42 @@ module.exports = function(options) {
 		_resolveFilename: Module._resolveFilename,
 	};
 
-	var shadowPaths = [
-		fsp.join(shadowRoot, 'node_modules'),
-		fsp.join(binRoot, 'node_modules'),
-	];
+	function shadowPaths(parent, root, relative) {
+		var paths = [];
+		if (relative) return paths;
+		root = fsp.join(root, 'node_modules');
+		parent = fsp.join(parent, '../node_modules');
+		while (parent.length >= root.length) {
+			paths.push(parent);
+			parent = fsp.join(parent, '../../node_modules');
+		}
+		console.error(paths);
+		return paths;
+	}
 
 	Module._resolveFilename = function(request, parent) {
 		try {
 			return original._resolveFilename(request, parent);
 		} catch (err) {
 			if (err.code !== 'MODULE_NOT_FOUND') throw err;
-			//console.error("RESOLVE " + request);
-			var from = parent.filename == null ? parent.paths[0] : fsp.dirname(parent.filename);
+			console.error("RESOLVE " + request);
+			var from = parent.filename == null ? parent.paths[0] : parent.filename;
 			if (!under(from, root)) throw err;
 			var mod = new Module(parent.id);
-			mod.filename = fsp.join(shadowRoot, from.substring(root.length));
-			mod.paths = shadowPaths;
-			//console.error("trying from ", mod.filename);
+			if (under(from, shadowRoot)) mod.filename = from;
+			else mod.filename = fsp.join(shadowRoot, from.substring(root.length));
+			mod.paths = shadowPaths(mod.filename, shadowRoot, request[0] === '.');
+			console.error("trying from ", mod.filename);
 			try {
 				return original._resolveFilename(request, mod);
 			} catch (err) {
 				if (err.code !== 'MODULE_NOT_FOUND') throw err;
-				mod.filename = fsp.join(binRoot, from.substring(root.length));
-				//console.error("trying binary from ", mod.filename);
+				if (under(from, binRoot)) mod.filename = from;
+				else if (under(from, shadowRoot)) mod.filename = fsp.join(binRoot, from.substring(shadowRoot.length));
+				else mod.filename = fsp.join(binRoot, from.substring(root.length));
+				mod.paths = shadowPaths(mod.filename, binRoot, request[0] === '.');
+				console.error("trying binary from ", mod.filename, mod.paths);
+				if (!/\.node$/.test(request)) request += '.node';
 				return original._resolveFilename(request, mod);
 			}
 		}
