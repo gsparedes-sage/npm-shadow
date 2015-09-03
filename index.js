@@ -2,7 +2,7 @@
 var Module = require('module').Module;
 
 function log(message) {
-	console.log("[NPM-CACHE] ", message)
+	console.log("[NPM-SHADOW] ", message)
 }
 
 var os = require('os'),
@@ -21,14 +21,9 @@ function ensureDir(path) {
 module.exports = function(options) {
 	options = options || {};
 	var root = options.sourceRoot || fsp.join(__dirname, '../..');
-	var cacheRoot = options.cacheRoot || fsp.join(__dirname, '../shadow-modules');
+	var shadowRoot = options.shadowRoot || fsp.join(__dirname, '../shadow-modules');
+	var binRoot = fsp.join(shadowRoot, arch + '-' + v8);
 	var verbose = !!options.verbose;
-
-
-	var txtCacheRoot = cacheRoot;
-	var redirRoot = fsp.join(cacheRoot, "redir");
-	var varCacheRoot = fsp.join(cacheRoot, "$$BIN$$");
-	var binCacheRoot = fsp.join(cacheRoot, arch + '-' + v8);
 
 	function readPackage(path) {
 		try {
@@ -60,11 +55,11 @@ module.exports = function(options) {
 				updateShadowModules(sub, ndepth, npkg);
 			} else if (stat.isFile()) {
 				if ((pkg && !pkg.private) || depth >= 2) {
-					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) copyFile(sub, txtCacheRoot);
+					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) copyFile(sub, shadowRoot);
 					else if (/\.node$/.test(name)) {
 						// if already in arch subdir (fibers precompiled for ex), copy it to regular output dir
-						if (sub.indexOf(arch) >= 0) copyFile(sub, txtCacheRoot);
-						else copyFile(sub, binCacheRoot);
+						if (sub.indexOf(arch) >= 0) copyFile(sub, shadowRoot);
+						else copyFile(sub, binRoot);
 					}
 				} else {
 					if (/\/fibers/.test(sub)) console.error("IGNORING " + sub, pkg && pkg.private, depth)
@@ -72,9 +67,6 @@ module.exports = function(options) {
 			}
 		});
 	}
-
-	//updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')));
-	//return;
 
 	function under(path, ref) {
 		return path.substring(0, ref.length) === ref;
@@ -85,8 +77,8 @@ module.exports = function(options) {
 	};
 
 	var shadowPaths = [
-		fsp.join(txtCacheRoot, 'node_modules'),
-		fsp.join(binCacheRoot, 'node_modules'),
+		fsp.join(shadowRoot, 'node_modules'),
+		fsp.join(binRoot, 'node_modules'),
 	];
 
 	Module._resolveFilename = function(request, parent) {
@@ -98,17 +90,26 @@ module.exports = function(options) {
 			var from = parent.filename == null ? parent.paths[0] : fsp.dirname(parent.filename);
 			if (!under(from, root)) throw err;
 			var mod = new Module(parent.id);
-			mod.filename = fsp.join(txtCacheRoot, from.substring(root.length));
+			mod.filename = fsp.join(shadowRoot, from.substring(root.length));
 			mod.paths = shadowPaths;
 			//console.error("trying from ", mod.filename);
 			try {
 				return original._resolveFilename(request, mod);
 			} catch (err) {
 				if (err.code !== 'MODULE_NOT_FOUND') throw err;
-				mod.filename = fsp.join(binCacheRoot, from.substring(root.length));
+				mod.filename = fsp.join(binRoot, from.substring(root.length));
 				//console.error("trying binary from ", mod.filename);
 				return original._resolveFilename(request, mod);
 			}
 		}
 	}
+	return {
+		run: function() {
+			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')));
+		},
+	};
+}
+
+if (module === require.main) {
+	module.exports().run();
 }
