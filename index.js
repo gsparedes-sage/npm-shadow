@@ -33,10 +33,11 @@ module.exports = function(options) {
 		}
 	}
 
-	function copyFile(src, dstRoot) {
+	function copyFile(src, dstRoot, enc) {
 		var dst = fsp.join(dstRoot, src.substring(root.length));
 		ensureDir(fsp.dirname(dst));
-		fs.writeFileSync(dst, fs.readFileSync(src));
+		if (enc) fs.writeFileSync(dst, fs.readFileSync(src, enc).replace(/\r\n/g, '\n'), enc);
+		else fs.writeFileSync(dst, fs.readFileSync(src));
 	}
 
 	function updateShadowModules(path, depth, pkg) {
@@ -55,7 +56,7 @@ module.exports = function(options) {
 				updateShadowModules(sub, ndepth, npkg);
 			} else if (stat.isFile()) {
 				if ((pkg && !pkg.private) || depth >= 2) {
-					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) copyFile(sub, shadowRoot);
+					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) copyFile(sub, shadowRoot, "utf8");
 					else if (/\.node$/.test(name)) {
 						// if already in arch subdir (fibers precompiled for ex), copy it to regular output dir
 						if (sub.indexOf(arch) >= 0) copyFile(sub, shadowRoot);
