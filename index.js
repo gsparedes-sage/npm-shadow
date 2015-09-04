@@ -36,7 +36,7 @@ module.exports = function(options) {
 	function copyFile(src, dstRoot, enc) {
 		var dst = fsp.join(dstRoot, src.substring(root.length));
 		ensureDir(fsp.dirname(dst));
-		if (enc) fs.writeFileSync(dst, fs.readFileSync(src, enc).replace(/\r\n/g, '\n'), enc);
+		if (false && enc) fs.writeFileSync(dst, fs.readFileSync(src, enc).replace(/\r\n/g, '\n'), enc);
 		else fs.writeFileSync(dst, fs.readFileSync(src));
 	}
 
