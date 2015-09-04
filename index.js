@@ -33,17 +33,23 @@ module.exports = function(options) {
 		}
 	}
 
+	// files that we get from NPM have unix style EOL, which disturbs git
+	// so we normalize them to windows-style on windows
+	function fixEol(str) {
+		return os.platform() === 'win32' ? str.split(/\r?\n/).join('\r\n') : str;
+	}
+
 	function copyFile(src, dstRoot, enc) {
 		var dst = fsp.join(dstRoot, src.substring(root.length));
 		ensureDir(fsp.dirname(dst));
-		if (false && enc) fs.writeFileSync(dst, fs.readFileSync(src, enc).replace(/\r\n/g, '\n'), enc);
+		if (enc) fs.writeFileSync(dst, fixEol(fs.readFileSync(src, enc)), enc);
 		else fs.writeFileSync(dst, fs.readFileSync(src));
 	}
 
 	function updateShadowModules(path, depth, pkg) {
 		fs.readdirSync(path).forEach(function(name) {
 			// don't recurse into shadow files!
-			if (name === 'shadow-modules') return;
+			if (name === 'shadow-modules' || name === '.git') return;
 			var sub = fsp.join(path, name)
 			var stat = fs.lstatSync(sub);
 			if (stat.isDirectory()) {
