@@ -21,7 +21,7 @@ function ensureDir(path) {
 module.exports = function(options) {
 	options = options || {};
 	var root = options.sourceRoot || fsp.join(__dirname, '../..');
-	var shadowRoot = options.shadowRoot || fsp.join(__dirname, '../shadow-modules');
+	var shadowRoot = options.shadowRoot || fsp.join(__dirname, '../../shadow-modules');
 	var binRoot = fsp.join(shadowRoot, arch + '-' + v8);
 	var verbose = !!options.verbose;
 
@@ -47,6 +47,10 @@ module.exports = function(options) {
 			var sub = fsp.join(path, name)
 			var stat = fs.lstatSync(sub);
 			if (stat.isDirectory()) {
+				if (/^grunt-/.test(name)) {
+					log("skipping " + sub);
+					return;
+				}
 				log("processing " + sub);
 				var npkgPath = fsp.join(sub, 'package.json');
 				var npkg = pkg;
