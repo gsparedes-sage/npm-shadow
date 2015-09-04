@@ -36,7 +36,7 @@ module.exports = function(options) {
 	// files that we get from NPM have unix style EOL, which disturbs git
 	// so we normalize them to windows-style on windows
 	function fixEol(str) {
-		return os.platform() === 'win32' ? str.split(/\r?\n/).join('\r\n') : str;
+		return str.replace(/\r\n/g, '\n');
 	}
 
 	function copyFile(src, dstRoot, enc) {
