@@ -54,7 +54,7 @@ module.exports = function(options) {
 	// we ignore these differences
 	function versionChanged(path) {
 		var pkg1 = readPackage(path);
-		var pkg2 = readPackage(shadowRoot + path.substring(shadowRoot.length));
+		var pkg2 = readPackage(shadowRoot + path.substring(root.length));
 		return !pkg1 || !pkg2 || pkg1.version !== pkg2.version;
 	}
 
@@ -86,8 +86,6 @@ module.exports = function(options) {
 						if (isPrecompiled(sub)) copyFile(sub, shadowRoot);
 						else copyFile(sub, binRoot);
 					}
-				} else {
-					if (/\/fibers/.test(sub)) console.error("IGNORING " + sub, pkg && pkg.private, depth)
 				}
 			}
 		});
