@@ -50,6 +50,14 @@ module.exports = function(options) {
 		return /[\/\\](nodetime[\/\\]compiled|fibers[\/\\]bin)[\/\\]/.test(path);
 	}
 
+	// npm adds extra info to package.json files so we get different files on windows and osx.
+	// we ignore these differences
+	function versionChanged(path) {
+		var pkg1 = readPackage(path);
+		var pkg2 = readPackage(shadowRoot + path.substring(shadowRoot.length));
+		return !pkg1 || !pkg2 || pkg1.version !== pkg2.version;
+	}
+
 	function updateShadowModules(path, depth, pkg) {
 		fs.readdirSync(path).forEach(function(name) {
 			// don't recurse into shadow files!
@@ -70,7 +78,10 @@ module.exports = function(options) {
 				updateShadowModules(sub, ndepth, npkg);
 			} else if (stat.isFile()) {
 				if ((pkg && !pkg.private) || depth >= 2) {
-					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) copyFile(sub, shadowRoot, "utf8");
+					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) {
+						if (name !== "package.json" || versionChanged(sub))
+						copyFile(sub, shadowRoot, "utf8");
+					}
 					else if (/\.node$/.test(name)) {
 						if (isPrecompiled(sub)) copyFile(sub, shadowRoot);
 						else copyFile(sub, binRoot);
