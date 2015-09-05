@@ -46,6 +46,10 @@ module.exports = function(options) {
 		else fs.writeFileSync(dst, fs.readFileSync(src));
 	}
 
+	function isPrecompiled(path) {
+		return /[\/\\](nodetime[\/\\]compiled|fibers[\/\\]bin)[\/\\]/.test(path);
+	}
+
 	function updateShadowModules(path, depth, pkg) {
 		fs.readdirSync(path).forEach(function(name) {
 			// don't recurse into shadow files!
@@ -68,8 +72,7 @@ module.exports = function(options) {
 				if ((pkg && !pkg.private) || depth >= 2) {
 					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) copyFile(sub, shadowRoot, "utf8");
 					else if (/\.node$/.test(name)) {
-						// if already in arch subdir (fibers precompiled for ex), copy it to regular output dir
-						if (sub.indexOf(arch) >= 0) copyFile(sub, shadowRoot);
+						if (isPrecompiled(sub)) copyFile(sub, shadowRoot);
 						else copyFile(sub, binRoot);
 					}
 				} else {
@@ -121,7 +124,6 @@ module.exports = function(options) {
 				else mod.filename = fsp.join(binRoot, from.substring(root.length));
 				mod.paths = shadowPaths(mod.filename, binRoot, request[0] === '.');
 				//console.error("trying binary from ", mod.filename, mod.paths);
-				if (!/\.node$/.test(request)) request += '.node';
 				return original._resolveFilename(request, mod);
 			}
 		}
