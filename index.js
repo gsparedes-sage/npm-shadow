@@ -58,7 +58,7 @@ module.exports = function(options) {
 		return !pkg1 || !pkg2 || pkg1.version !== pkg2.version;
 	}
 
-	function updateShadowModules(path, depth, pkg) {
+	function updateShadowModules(path, depth, pkg, streamlineFiles) {
 		fs.readdirSync(path).forEach(function(name) {
 			// don't recurse into shadow files!
 			if (name === 'shadow-modules' || name === '.git') return;
@@ -75,10 +75,11 @@ module.exports = function(options) {
 				if (fs.existsSync(npkgPath)) npkg = readPackage(npkgPath);
 				var ndepth = depth;
 				if (name === 'node_modules') ndepth++;
-				updateShadowModules(sub, ndepth, npkg);
+				updateShadowModules(sub, ndepth, npkg, streamlineFiles);
 			} else if (stat.isFile()) {
 				if ((pkg && !pkg.private) || depth >= 2) {
 					if (/\.(json|js|_js|coffee|_coffee)$/.test(name)) {
+						if (/\.(_js|_coffee)$/.test(name)) streamlineFiles.push(sub);
 						if (name !== "package.json" || versionChanged(sub))
 						copyFile(sub, shadowRoot, "utf8");
 					}
@@ -139,7 +140,16 @@ module.exports = function(options) {
 	}
 	return {
 		run: function() {
-			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')));
+			var streamlineFiles = [];
+			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), streamlineFiles);
+			var hash = {};
+			streamlineFiles.forEach(function(path) {
+				var segs = path.substring(root.length).split(/[\\\/]/);
+				// segs are obtained from /node_modules/xxx so xxx is segs[2]
+				hash[segs[2]] = true;
+			});
+			fs.writeFileSync(fsp.join(shadowRoot, "transform-list.json"), 
+				JSON.stringify(Object.keys(hash), null, '\t'), 'utf8');
 		},
 	};
 }
