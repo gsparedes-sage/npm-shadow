@@ -83,7 +83,7 @@ module.exports = function(options) {
 						if (name !== "package.json" || versionChanged(sub))
 						copyFile(sub, shadowRoot, "utf8");
 					}
-					else if (/\.node$/.test(name)) {
+					else if (/(^phantomjs(\.exe)?$|\.node$)/i.test(name)) {
 						if (isPrecompiled(sub)) copyFile(sub, shadowRoot);
 						else copyFile(sub, binRoot);
 					}
