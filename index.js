@@ -18,6 +18,18 @@ function ensureDir(path) {
 	fs.mkdirSync(path);
 }
 
+function rmdir(path) {
+	fs.readdirSync(path).forEach(function(name) {
+		var p = fsp.join(path, name);
+		if (fs.statSync(p).isDirectory()) {
+			rmdir(p);
+		} else {
+			fs.unlinkSync(p);
+		}
+	});
+	fs.rmdirSync(path);
+}
+
 module.exports = function(options) {
 	options = options || {};
 	var root = options.sourceRoot || fsp.join(__dirname, '../..');
@@ -141,6 +153,8 @@ module.exports = function(options) {
 	return {
 		run: function() {
 			var streamlineFiles = [];
+			rmdir(shadowRoot);
+			rmdir(binRoot);
 			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), streamlineFiles);
 			var hash = {};
 			streamlineFiles.forEach(function(path) {
