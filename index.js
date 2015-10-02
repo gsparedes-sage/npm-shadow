@@ -52,11 +52,12 @@ module.exports = function(options) {
 		return str.replace(/\r\n/g, '\n');
 	}
 
-	function copyFile(src, dstRoot, enc) {
+	function copyFile(src, dstRoot, enc, exec) {
 		var dst = fsp.join(dstRoot, src.substring(root.length));
 		ensureDir(fsp.dirname(dst));
 		if (enc) fs.writeFileSync(dst, fixEol(fs.readFileSync(src, enc)), enc);
 		else fs.writeFileSync(dst, fs.readFileSync(src));
+		if (exec) fs.chmodSync(dst, '0755');
 	}
 
 	function isPrecompiled(path) {
@@ -98,7 +99,7 @@ module.exports = function(options) {
 					}
 					else if (/(^phantomjs(\.exe)?$|\.node$)/i.test(name)) {
 						if (isPrecompiled(sub)) copyFile(sub, shadowRoot);
-						else copyFile(sub, binRoot);
+						else copyFile(sub, binRoot, null, /^phantomjs$/.test(name));
 					}
 				}
 			}
