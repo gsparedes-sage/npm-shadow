@@ -19,6 +19,7 @@ function ensureDir(path) {
 }
 
 function rmdir(path) {
+	if (!fs.existsSync(path)) return;
 	fs.readdirSync(path).forEach(function(name) {
 		var p = fsp.join(path, name);
 		if (fs.statSync(p).isDirectory()) {
