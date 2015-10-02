@@ -156,7 +156,8 @@ module.exports = function(options) {
 		run: function() {
 			var streamlineFiles = [];
 			rmdir(fsp.join(shadowRoot, 'node_modules'));
-			rmdir(fsp.join(binRoot, 'node_modules'));
+			// clean binaries manually because we also have private ones
+			//rmdir(fsp.join(binRoot, 'node_modules'));
 			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), streamlineFiles);
 			var hash = {};
 			streamlineFiles.forEach(function(path) {
