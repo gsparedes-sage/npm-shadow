@@ -57,7 +57,7 @@ module.exports = function(options) {
 		ensureDir(fsp.dirname(dst));
 		if (enc) fs.writeFileSync(dst, fixEol(fs.readFileSync(src, enc)), enc);
 		else fs.writeFileSync(dst, fs.readFileSync(src));
-		if (exec) fs.chmodSync(dst, '0755');
+		if (exec) fs.chmodSync(dst, '755');
 	}
 
 	function isPrecompiled(path) {
