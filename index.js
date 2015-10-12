@@ -92,7 +92,7 @@ module.exports = function(options) {
 				updateShadowModules(sub, ndepth, npkg, streamlineFiles);
 			} else if (stat.isFile()) {
 				if ((pkg && !pkg.private) || depth >= 2) {
-					if (/(\.(json|js|_js|coffee|_coffee|mgc)|^coffee)$/.test(name)) {
+					if (/(\.(json|js|_js|coffee|_coffee)|^coffee)$/.test(name)) {
 						if (/\.(_js|_coffee)$/.test(name)) streamlineFiles.push(sub);
 						if (name !== "package.json" || versionChanged(sub)) copyFile(sub, shadowRoot, "utf8");
 					} else if (/\.mgc$/.test(name)) {
