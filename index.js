@@ -83,7 +83,7 @@ module.exports = function(options) {
 					log("skipping " + sub);
 					return;
 				}
-				log("processing " + sub);
+				//log("processing " + sub);
 				var npkgPath = fsp.join(sub, 'package.json');
 				var npkg = pkg;
 				if (fs.existsSync(npkgPath)) npkg = readPackage(npkgPath);
@@ -152,12 +152,56 @@ module.exports = function(options) {
 			}
 		}
 	}
+
+	function flatten(path, depth) {
+		var max = 0;
+		if (!/node_modules$/.test(path)) {
+			fs.readdirSync(path).forEach(function(name) {
+				var p = fsp.join(path, name);
+				var stat = fs.statSync(p);
+				if (stat.isDirectory()) max = Math.max(max, flatten(p, depth + 1));
+			});
+		} else {
+			var changed = true;
+			while (changed) {
+				changed = false;
+				fs.readdirSync(path).forEach(function(name) {
+					var p = fsp.join(path, name);
+					var stat = fs.statSync(p);
+					if (stat.isDirectory()) {
+						var sub = fsp.join(p, 'node_modules');
+						if (fs.existsSync(sub) && fs.statSync(sub).isDirectory()) {
+							max = Math.max(max, flatten(sub, depth + 2));
+							fs.readdirSync(sub).forEach(function(n) {
+								var oldp = fsp.join(sub, n);
+								var newp = fsp.join(path, n);
+								if (!fs.existsSync(newp)) {
+									//console.log(depth + "\tOLD ", oldp);
+									//console.log(depth + "\tNEW ", newp);
+									fs.renameSync(oldp, newp);
+									changed = true;
+								}
+							});
+						} else {
+							max = Math.max(max, flatten(p, depth + 1));
+						}
+					} else {
+						max = Math.max(max, path.length + name.length + 1);
+					}
+				});
+			}
+		}
+		return max;
+	}
+
 	return {
 		run: function() {
 			var streamlineFiles = [];
 			rmdir(fsp.join(shadowRoot, 'node_modules'));
 			// clean binaries manually because we also have private ones
 			//rmdir(fsp.join(binRoot, 'node_modules'));
+			var max = flatten(fsp.join(root, 'node_modules'), 0);
+			console.log("max path length: ", max);
 			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), streamlineFiles);
 			var hash = {};
 			streamlineFiles.forEach(function(path) {
