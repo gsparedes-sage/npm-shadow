@@ -22,7 +22,7 @@ function rmdir(path) {
 	if (!fs.existsSync(path)) return;
 	fs.readdirSync(path).forEach(function(name) {
 		var p = fsp.join(path, name);
-		if (fs.statSync(p).isDirectory()) {
+		if (fs.lstatSync(p).isDirectory()) {
 			rmdir(p);
 		} else {
 			fs.unlinkSync(p);
@@ -158,7 +158,7 @@ module.exports = function(options) {
 		if (!/node_modules$/.test(path)) {
 			fs.readdirSync(path).forEach(function(name) {
 				var p = fsp.join(path, name);
-				var stat = fs.statSync(p);
+				var stat = fs.lstatSync(p);
 				if (stat.isDirectory()) max = Math.max(max, flatten(p, depth + 1));
 			});
 		} else {
@@ -167,11 +167,10 @@ module.exports = function(options) {
 				changed = false;
 				fs.readdirSync(path).forEach(function(name) {
 					var p = fsp.join(path, name);
-					var stat = fs.statSync(p);
+					var stat = fs.lstatSync(p);
 					if (stat.isDirectory()) {
 						var sub = fsp.join(p, 'node_modules');
-						if (fs.existsSync(sub) && fs.statSync(sub).isDirectory()) {
-							max = Math.max(max, flatten(sub, depth + 2));
+						if (fs.existsSync(sub) && fs.lstatSync(sub).isDirectory()) {
 							fs.readdirSync(sub).forEach(function(n) {
 								var oldp = fsp.join(sub, n);
 								var newp = fsp.join(path, n);
@@ -190,6 +189,13 @@ module.exports = function(options) {
 					}
 				});
 			}
+			fs.readdirSync(path).forEach(function(name) {
+				var p = fsp.join(path, name);
+				var stat = fs.lstatSync(p);
+				if (stat.isDirectory()) {
+					max = Math.max(max, flatten(p, depth + 1));
+				}
+			});
 		}
 		return max;
 	}
