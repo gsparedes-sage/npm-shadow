@@ -72,7 +72,7 @@ module.exports = function(options) {
 		return !pkg1 || !pkg2 || pkg1.version !== pkg2.version;
 	}
 
-	function updateShadowModules(path, depth, pkg, streamlineFiles) {
+	function updateShadowModules(path, depth, pkg, hasGit, streamlineFiles) {
 		fs.readdirSync(path).forEach(function(name) {
 			// don't recurse into shadow files!
 			if (name === 'shadow-modules' || name === '.git') return;
@@ -86,12 +86,16 @@ module.exports = function(options) {
 				//log("processing " + sub);
 				var npkgPath = fsp.join(sub, 'package.json');
 				var npkg = pkg;
-				if (fs.existsSync(npkgPath)) npkg = readPackage(npkgPath);
+				var nHasGit = hasGit;
+				if (fs.existsSync(npkgPath)) {
+					npkg = readPackage(npkgPath);
+					nHasGit = fs.existsSync(fsp.join(sub, '.git'));
+				}
 				var ndepth = depth;
 				if (name === 'node_modules') ndepth++;
-				updateShadowModules(sub, ndepth, npkg, streamlineFiles);
+				updateShadowModules(sub, ndepth, npkg, nHasGit, streamlineFiles);
 			} else if (stat.isFile()) {
-				if ((pkg && !pkg.private) || depth >= 2) {
+				if ((pkg && !pkg.private && !hasGit) || depth >= 2) {
 					if (/(\.(json|js|_js|coffee|_coffee)|^coffee)$/.test(name)) {
 						if (/\.(_js|_coffee)$/.test(name)) streamlineFiles.push(sub);
 						if (name !== "package.json" || versionChanged(sub)) copyFile(sub, shadowRoot, "utf8");
@@ -208,7 +212,7 @@ module.exports = function(options) {
 			//rmdir(fsp.join(binRoot, 'node_modules'));
 			var max = flatten(fsp.join(root, 'node_modules'), 0);
 			console.log("max path length: ", max);
-			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), streamlineFiles);
+			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), false, streamlineFiles);
 			var hash = {};
 			streamlineFiles.forEach(function(path) {
 				var segs = path.substring(root.length).split(/[\\\/]/);
