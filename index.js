@@ -72,7 +72,7 @@ module.exports = function(options) {
 		return !pkg1 || !pkg2 || pkg1.version !== pkg2.version;
 	}
 
-	function updateShadowModules(path, depth, pkg, hasGit, streamlineFiles) {
+	function updateShadowModules(path, depth, pkg, hasGit) {
 		fs.readdirSync(path).forEach(function(name) {
 			// don't recurse into shadow files!
 			if (name === 'shadow-modules' || name === '.git') return;
@@ -93,11 +93,10 @@ module.exports = function(options) {
 				}
 				var ndepth = depth;
 				if (name === 'node_modules') ndepth++;
-				updateShadowModules(sub, ndepth, npkg, nHasGit, streamlineFiles);
+				updateShadowModules(sub, ndepth, npkg, nHasGit);
 			} else if (stat.isFile()) {
 				if ((pkg && !pkg.private && !hasGit) || depth >= 2) {
 					if (/(\.(json|js|_js|coffee|_coffee)|^coffee)$/.test(name)) {
-						if (/\.(_js|_coffee)$/.test(name)) streamlineFiles.push(sub);
 						if (name !== "package.json" || versionChanged(sub)) copyFile(sub, shadowRoot, "utf8");
 					} else if (/\.mgc$/.test(name)) {
 						copyFile(sub, shadowRoot); // binary mode but copied to node_modules
@@ -206,21 +205,12 @@ module.exports = function(options) {
 
 	return {
 		run: function() {
-			var streamlineFiles = [];
 			rmdir(fsp.join(shadowRoot, 'node_modules'));
 			// clean binaries manually because we also have private ones
 			//rmdir(fsp.join(binRoot, 'node_modules'));
 			var max = flatten(fsp.join(root, 'node_modules'), 0);
 			console.log("max path length: ", max);
-			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), false, streamlineFiles);
-			var hash = {};
-			streamlineFiles.forEach(function(path) {
-				var segs = path.substring(root.length).split(/[\\\/]/);
-				// segs are obtained from /node_modules/xxx so xxx is segs[2]
-				hash[segs[2]] = true;
-			});
-			fs.writeFileSync(fsp.join(shadowRoot, "transform-list.json"), 
-				JSON.stringify(Object.keys(hash), null, '\t'), 'utf8');
+			updateShadowModules(root, 0, readPackage(fsp.join(root, 'package.json')), false);
 		},
 	};
 }
