@@ -9,6 +9,24 @@ var os = require('os'),
 	fs = require('fs'),
 	fsp = require('path');
 
+// sanity check: abort if we find several ../node_modules when walking our directory up
+// this confuses the lookup because these directories will have priority over shadow-modules
+(function() {
+	var dir = __dirname,
+		found = false;
+	while (true) {
+		var d = fsp.join(dir, '/..');
+		if (d.length >= dir.length) break;
+		var dd = fsp.join(d, 'node_modules');
+		if (fs.existsSync(dd)) {
+			if (found) throw new Error("npm-shadow detected conflict with " + dd + '.\nPlease remove this directory.\nABORTING!');
+			found = true;
+		}
+		dir = d;
+	}
+})();
+
+
 var arch = os.platform() + '-' + os.arch();
 var v8 = 'v8-' + /[0-9]+\.[0-9]+/.exec(process.versions.v8)[0];
 
