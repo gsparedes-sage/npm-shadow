@@ -12,10 +12,10 @@ var os = require('os'),
 // sanity check: abort if we find several ../node_modules when walking our directory up
 // this confuses the lookup because these directories will have priority over shadow-modules
 (function() {
-	var dir = __dirname,
+	var dir = fsp.join(__dirname, '..'),
 		found = false;
 	while (true) {
-		var d = fsp.join(dir, '/..');
+		var d = fsp.join(dir, '..');
 		if (d.length >= dir.length) break;
 		var dd = fsp.join(d, 'node_modules');
 		if (fs.existsSync(dd)) {
