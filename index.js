@@ -116,7 +116,7 @@ module.exports = function(options) {
 				if ((pkg && !pkg.private && !hasGit) || depth >= 2) {
 					if (/(\.(json|js|_js|coffee|_coffee)|^coffee)$/.test(name)) {
 						if (name !== "package.json" || versionChanged(sub)) copyFile(sub, shadowRoot, "utf8");
-					} else if (/\.(mgc|afm)$/.test(name)) {
+					} else if (/\.(mgc|afm|crt|key)$/.test(name)) {
 						copyFile(sub, shadowRoot); // binary mode but copied to node_modules
 					} else if (/(^phantomjs(\.exe)?$|\.node$)/i.test(name)) {
 						if (isPrecompiled(sub)) copyFile(sub, shadowRoot);
