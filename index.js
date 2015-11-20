@@ -168,6 +168,14 @@ module.exports = function(options) {
 				else if (under(from, shadowRoot)) mod.filename = fsp.join(binRoot, from.substring(shadowRoot.length));
 				else mod.filename = fsp.join(binRoot, from.substring(root.length));
 				mod.paths = shadowPaths(mod.filename, binRoot, request[0] === '.');
+				if (request[0] === '.') {
+					// Module implementation has changed in node >= 4.2 and original._resolveFilename 
+					// does not find the file any more (don't know exactly why but it may because mod.dirname 
+					// does not exist - but joined path exists - in this case).
+					var p = fsp.join(fsp.dirname(mod.filename), request);
+					//console.error("trying relative binary", p);
+					if (fs.existsSync(p + '.node')) return p + '.node';
+				}
 				//console.error("trying binary from ", mod.filename, mod.paths);
 				return original._resolveFilename(request, mod);
 			}
